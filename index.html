@@ -1931,17 +1931,27 @@ function handleAuthActionClick() {
     renderTable();
   }
 function updateProgress() {
-    const currentList = parsedData[currentTab] || [];
+    let currentList = parsedData[currentTab] || [];
+    const secSelect = document.getElementById('sectionFilterSelect');
+    const secFilter = secSelect ? secSelect.value : 'all';
+
+    if (secFilter !== 'all') {
+      currentList = currentList.filter(item => item.section === secFilter);
+    }
+
     let pickedCount = 0;
     let pickedQty = 0;
+    let totalQty = 0;
     let totalItems = 0;
 
     if (viewMode === 'grouped') {
       totalItems = currentList.length;
       currentList.forEach(item => {
+        const itemQty = item.quantity || 0;
+        totalQty += itemQty;
         if (pickedModels.has(item.model)) {
           pickedCount++;
-          pickedQty += item.quantity;
+          pickedQty += itemQty;
         }
       });
     } else {
@@ -1949,25 +1959,31 @@ function updateProgress() {
         if (item.variants && item.variants.length > 0) {
           item.variants.forEach(v => {
             totalItems++;
+            const vQty = v.qty || 0;
+            totalQty += vQty;
             const uKey = `${item.model}___${v.raw}`;
             if (pickedModels.has(uKey)) {
               pickedCount++;
-              pickedQty += v.qty;
+              pickedQty += vQty;
             }
           });
         } else {
           totalItems++;
+          const itemQty = item.quantity || 0;
+          totalQty += itemQty;
           if (pickedModels.has(item.model)) {
             pickedCount++;
-            pickedQty += item.quantity;
+            pickedQty += itemQty;
           }
         }
       });
     }
 
-    document.getElementById('pickedCount').innerText = pickedCount;
-    document.getElementById('totalTabCount').innerText = totalItems;
-    document.getElementById('pickedQty').innerText = pickedQty.toLocaleString();
+    const remainingQty = totalQty - pickedQty;
+    const progressEl = document.getElementById('pickingProgress');
+    if (progressEl) {
+      progressEl.innerHTML = `✅ إخراج: <strong>${pickedQty.toLocaleString()}</strong> من <strong>${totalQty.toLocaleString()}</strong> قطعة (متبقي: <strong style="color:#b91c1c;">${remainingQty.toLocaleString()}</strong> ق) <span style="opacity:0.85; font-size:11px; margin-right:4px;">[${pickedCount}/${totalItems} موديل]</span>`;
+    }
   }
 
   function getFilteredAndSortedList() {
